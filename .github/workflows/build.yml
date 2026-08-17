@@ -1,0 +1,28 @@
+name: Build APK
+on: push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential git zip unzip openjdk-17-jdk
+          pip install --user buildozer cython
+          export PATH=$HOME/.local/bin:$PATH
+          buildozer init
+          sed -i 's/^android.ndk = .*/android.ndk = 25c/' buildozer.spec
+          echo "android.ignore_root = 1" >> buildozer.spec
+      - name: Build APK
+        run: |
+          export PATH=$HOME/.local/bin:$PATH
+          buildozer android debug
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: kidplayer-apk
+          path: bin/*.apk
