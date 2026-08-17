@@ -22,27 +22,30 @@ jobs:
         run: |
           pip install --user buildozer cython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Copy SDK to Buildozer's expected path
+        run: |
+          # Remove Buildozer's default SDK if it exists
+          rm -rf ~/.buildozer/android/platform/android-sdk
+          # Copy the entire action-installed SDK to Buildozer's path
+          mkdir -p ~/.buildozer/android/platform
+          cp -R /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
+          # Verify build-tools 33 is present
+          ls -la ~/.buildozer/android/platform/android-sdk/build-tools/33.0.0/
       - name: Configure buildozer.spec
         run: |
-          # Remove any existing SDK or NDK lines
+          # Remove any existing SDK/NDK/build_tools/ignore_root lines
           sed -i '/^android.sdk_path/d' buildozer.spec
           sed -i '/^android.ndk/d' buildozer.spec
           sed -i '/^android.build_tools/d' buildozer.spec
           sed -i '/^android.ignore_root/d' buildozer.spec
           sed -i '/^android.accept_sdk_license/d' buildozer.spec
-          # Force SDK to the action-installed path
-          echo "android.sdk_path = /usr/local/lib/android/sdk" >> buildozer.spec
-          # Force NDK 25c (Buildozer will download it)
+          # Now set Buildozer to use its default path (which we just populated)
+          echo "android.sdk_path = ~/.buildozer/android/platform/android-sdk" >> buildozer.spec
           echo "android.ndk = 25c" >> buildozer.spec
-          # Build-tools version (already installed by action)
           echo "android.build_tools = 33.0.0" >> buildozer.spec
-          # Ignore root warning
           echo "android.ignore_root = 1" >> buildozer.spec
-          # Auto-accept SDK license (just in case)
           echo "android.accept_sdk_license = True" >> buildozer.spec
       - name: Build APK
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk   # Override default path
         run: buildozer android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
