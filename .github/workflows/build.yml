@@ -8,25 +8,32 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
           sudo apt update
           sudo apt install -y build-essential git zip unzip openjdk-17-jdk
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          cmdline-tools-version: latest
+          build-tools-version: 33.0.0
+          accept-android-sdk-licenses: true
+      - name: Install Buildozer and Cython
+        run: |
           pip install --user buildozer cython
-          export PATH=$HOME/.local/bin:$PATH
-          # Clean and set all required android settings
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Configure buildozer.spec
+        run: |
           sed -i '/^android.ndk/d' buildozer.spec
+          sed -i '/^android.sdk_path/d' buildozer.spec
           sed -i '/^android.build_tools/d' buildozer.spec
           sed -i '/^android.ignore_root/d' buildozer.spec
-          sed -i '/^android.accept_sdk_license/d' buildozer.spec
+          echo "android.sdk_path = /usr/local/lib/android/sdk" >> buildozer.spec
           echo "android.ndk = 25c" >> buildozer.spec
           echo "android.build_tools = 33.0.0" >> buildozer.spec
           echo "android.ignore_root = 1" >> buildozer.spec
-          echo "android.accept_sdk_license = True" >> buildozer.spec
       - name: Build APK
-        run: |
-          export PATH=$HOME/.local/bin:$PATH
-          buildozer android debug
+        run: buildozer android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
