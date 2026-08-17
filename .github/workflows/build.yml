@@ -14,13 +14,15 @@ jobs:
           sudo apt install -y build-essential git zip unzip openjdk-17-jdk
           pip install --user buildozer cython
           export PATH=$HOME/.local/bin:$PATH
-          # Configure buildozer.spec
+          # Clean and set all required android settings
           sed -i '/^android.ndk/d' buildozer.spec
-          echo "android.ndk = 25c" >> buildozer.spec
-          sed -i '/^android.ignore_root/d' buildozer.spec
-          echo "android.ignore_root = 1" >> buildozer.spec
           sed -i '/^android.build_tools/d' buildozer.spec
+          sed -i '/^android.ignore_root/d' buildozer.spec
+          sed -i '/^android.accept_sdk_license/d' buildozer.spec
+          echo "android.ndk = 25c" >> buildozer.spec
           echo "android.build_tools = 33.0.0" >> buildozer.spec
+          echo "android.ignore_root = 1" >> buildozer.spec
+          echo "android.accept_sdk_license = True" >> buildozer.spec
       - name: Build APK
         run: |
           export PATH=$HOME/.local/bin:$PATH
