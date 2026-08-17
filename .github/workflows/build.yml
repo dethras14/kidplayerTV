@@ -24,15 +24,18 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Configure buildozer.spec
         run: |
-          sed -i '/^android.ndk/d' buildozer.spec
+          # Remove any existing sdk_path line (it will be overridden by ANDROID_HOME)
           sed -i '/^android.sdk_path/d' buildozer.spec
+          # Keep NDK, build_tools, ignore_root
+          sed -i '/^android.ndk/d' buildozer.spec
           sed -i '/^android.build_tools/d' buildozer.spec
           sed -i '/^android.ignore_root/d' buildozer.spec
-          echo "android.sdk_path = /usr/local/lib/android/sdk" >> buildozer.spec
           echo "android.ndk = 25c" >> buildozer.spec
           echo "android.build_tools = 33.0.0" >> buildozer.spec
           echo "android.ignore_root = 1" >> buildozer.spec
       - name: Build APK
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk   # Path set by setup-android
         run: buildozer android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
