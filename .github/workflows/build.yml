@@ -18,29 +18,31 @@ jobs:
           cmdline-tools-version: latest
           build-tools-version: 33.0.0
           accept-android-sdk-licenses: true
-      - name: Install Buildozer
+      - name: Install Buildozer and Cython
         run: |
           pip install --user buildozer cython
           echo "$HOME/.local/bin" >> $GITHUB_PATH
-      - name: Configure Buildozer to use the pre-installed SDK
+      - name: Configure buildozer.spec
         run: |
-          # Remove Buildozer's own SDK (if any)
-          rm -rf ~/.buildozer/android/platform/android-sdk
-          # Create a symlink from Buildozer's expected path to the actual SDK
-          mkdir -p ~/.buildozer/android/platform
-          ln -s /usr/local/lib/android/sdk ~/.buildozer/android/platform/android-sdk
-          # Set spec to use the same path (optional but safe)
+          # Remove any existing SDK or NDK lines
           sed -i '/^android.sdk_path/d' buildozer.spec
-          echo "android.sdk_path = /usr/local/lib/android/sdk" >> buildozer.spec
-          # Force NDK 25c and ignore root
           sed -i '/^android.ndk/d' buildozer.spec
-          echo "android.ndk = 25c" >> buildozer.spec
-          sed -i '/^android.ignore_root/d' buildozer.spec
-          echo "android.ignore_root = 1" >> buildozer.spec
-          # Force build-tools 33 (though already installed)
           sed -i '/^android.build_tools/d' buildozer.spec
+          sed -i '/^android.ignore_root/d' buildozer.spec
+          sed -i '/^android.accept_sdk_license/d' buildozer.spec
+          # Force SDK to the action-installed path
+          echo "android.sdk_path = /usr/local/lib/android/sdk" >> buildozer.spec
+          # Force NDK 25c (Buildozer will download it)
+          echo "android.ndk = 25c" >> buildozer.spec
+          # Build-tools version (already installed by action)
           echo "android.build_tools = 33.0.0" >> buildozer.spec
+          # Ignore root warning
+          echo "android.ignore_root = 1" >> buildozer.spec
+          # Auto-accept SDK license (just in case)
+          echo "android.accept_sdk_license = True" >> buildozer.spec
       - name: Build APK
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk   # Override default path
         run: buildozer android debug
       - name: Upload APK
         uses: actions/upload-artifact@v4
